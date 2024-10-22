@@ -22,6 +22,8 @@ class LoginScreenState extends State<LoginScreen> {
   bool _isTermsAccepted = false;
   final StorageService _storageService = StorageService();
 
+  bool _isLoading = false; // متغير للتحكم بحالة التحميل
+
   @override
   void initState() {
     super.initState();
@@ -47,7 +49,6 @@ class LoginScreenState extends State<LoginScreen> {
             // التموجات في الجزء العلوي
             Positioned(
               top: isKeyboardVisible ? -50 : 0,
-              // تعديل الموضع بناءً على لوحة المفاتيح
               left: 0,
               right: 0,
               child: SizedBox(
@@ -60,7 +61,6 @@ class LoginScreenState extends State<LoginScreen> {
             // الشعار
             Positioned(
               top: isKeyboardVisible ? 30 : 100,
-              // تعديل الموضع بناءً على لوحة المفاتيح
               left: 0,
               right: 0,
               child: Center(
@@ -76,6 +76,18 @@ class LoginScreenState extends State<LoginScreen> {
               child: Center(
                 child: BlocListener<AuthCubit, AuthState>(
                   listener: (context, state) async {
+                    if (state is AuthLoading) {
+                      // عرض مؤشر التحميل
+                      setState(() {
+                        _isLoading = true;
+                      });
+                    } else {
+                      // إخفاء مؤشر التحميل
+                      setState(() {
+                        _isLoading = false;
+                      });
+                    }
+
                     if (state is AuthSuccessLogin) {
                       final authCubit = context.read<AuthCubit>();
 
@@ -99,125 +111,127 @@ class LoginScreenState extends State<LoginScreen> {
                           "خطأ في تسجيل الدخول: ${state.errorMessage}");
                     }
                   },
-                  child: SingleChildScrollView(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: <Widget>[
-                        const SizedBox(height: 180),
-                        _buildTextField(
-                          controller: _emailController,
-                          labelText: 'البريد الإلكتروني أو رقم الهاتف',
-                          icon: Icons.person,
-                          keyboardType: TextInputType.emailAddress,
-                        ),
-                        const SizedBox(height: 20),
-                        _buildTextField(
-                          controller: _passwordController,
-                          labelText: 'كلمة المرور',
-                          icon: Icons.lock,
-                          obscureText: !_isPasswordVisible,
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _isPasswordVisible
-                                  ? Icons.visibility
-                                  : Icons.visibility_off,
-                              color: AppTheme.defaultUserColor,
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                _isPasswordVisible = !_isPasswordVisible;
-                              });
-                            },
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Row(
-                              children: [
-                                Checkbox(
-                                  value: _isRememberMeChecked,
-                                  onChanged: (value) {
-                                    setState(() {
-                                      _isRememberMeChecked = value ?? false;
-                                    });
-                                  },
-                                  activeColor: AppTheme.defaultUserColor,
-                                  checkColor:
-                                      Theme.of(context).colorScheme.onPrimary,
-                                ),
-                                Text(
-                                  'تذكرني',
-                                  style: TextStyle(
-                                    color:
-                                        Theme.of(context).colorScheme.onSurface,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            TextButton(
-                              onPressed: () {
-                                // Forgot password logic
-                              },
-                              child: Text(
-                                'نسيت كلمة المرور؟',
-                                style: TextStyle(
-                                  color: AppTheme.defaultUserColor,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        Row(
-                          children: [
-                            Checkbox(
-                              value: _isTermsAccepted,
-                              onChanged: (value) {
-                                setState(() {
-                                  _isTermsAccepted = value ?? false;
-                                });
-                              },
-                              activeColor: AppTheme.defaultUserColor,
-                              checkColor:
-                                  Theme.of(context).colorScheme.onPrimary,
-                            ),
-                            Text(
-                              'أوافق على الشروط والأحكام',
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.onSurface,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 20),
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: _login,
-                            child: const Text('تسجيل الدخول'),
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        TextButton(
-                          onPressed: () {
-                            Navigator.pushNamed(context, '/signup');
-                          },
-                          child: Text(
-                            'ليس لديك حساب؟ سجل الآن',
-                            style: TextStyle(
-                              color: AppTheme.defaultUserColor,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+                  child: Stack(
+                    children: [
+                      _buildForm(),
+                    ],
                   ),
                 ),
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildForm() {
+    return SingleChildScrollView(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: <Widget>[
+          const SizedBox(height: 180),
+          _buildTextField(
+            controller: _emailController,
+            labelText: 'البريد الإلكتروني أو رقم الهاتف',
+            icon: Icons.person,
+            keyboardType: TextInputType.emailAddress,
+          ),
+          const SizedBox(height: 20),
+          _buildTextField(
+            controller: _passwordController,
+            labelText: 'كلمة المرور',
+            icon: Icons.lock,
+            obscureText: !_isPasswordVisible,
+            suffixIcon: IconButton(
+              icon: Icon(
+                _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                color: AppTheme.defaultUserColor,
+              ),
+              onPressed: () {
+                setState(() {
+                  _isPasswordVisible = !_isPasswordVisible;
+                });
+              },
+            ),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Checkbox(
+                value: _isRememberMeChecked,
+                onChanged: (value) {
+                  setState(() {
+                    _isRememberMeChecked = value ?? false;
+                  });
+                },
+                activeColor: AppTheme.defaultUserColor,
+                checkColor: Theme.of(context).colorScheme.onPrimary,
+              ),
+              Text(
+                'تذكرني',
+                style:
+                    TextStyle(color: Theme.of(context).colorScheme.onSurface),
+              ),
+              TextButton(
+                onPressed: () {
+                  // منطق استعادة كلمة المرور
+                },
+                child: Text(
+                  'نسيت كلمة المرور؟',
+                  style: TextStyle(color: AppTheme.defaultUserColor),
+                ),
+              ),
+            ],
+          ),
+          Row(
+            children: [
+              Checkbox(
+                value: _isTermsAccepted,
+                onChanged: (value) {
+                  setState(() {
+                    _isTermsAccepted = value ?? false;
+                  });
+                },
+                activeColor: AppTheme.defaultUserColor,
+                checkColor: Theme.of(context).colorScheme.onPrimary,
+              ),
+              Text(
+                'أوافق على الشروط والأحكام',
+                style:
+                    TextStyle(color: Theme.of(context).colorScheme.onSurface),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: _isLoading ? null : _login, // تعطيل الزر أثناء التحميل
+              child: _isLoading
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        color: Colors.white, // لون المؤشر
+                        strokeWidth: 2.0, // سمك المؤشر
+                      ),
+                    )
+                  : const Text('تسجيل الدخول'),
+            ),
+          ),
+          const SizedBox(height: 20),
+          TextButton(
+            onPressed: () {
+              Navigator.pushNamed(context, '/signup');
+            },
+            child: Text(
+              'ليس لديك حساب؟ سجل الآن',
+              style: TextStyle(color: AppTheme.defaultUserColor),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -259,9 +273,16 @@ class LoginScreenState extends State<LoginScreen> {
     NetworkService networkService = NetworkService();
 
     // التحقق من الاتصال بالإنترنت
-    bool isConnected = await networkService.checkInternetConnection();
-    if (!isConnected) {
-      _showSnackBar("لا يوجد اتصال بالإنترنت");
+    // bool isConnected = await networkService.checkInternetConnection();
+    // if (!isConnected) {
+    //   _showSnackBar("لا يوجد اتصال بالإنترنت. يرجى التحقق من الاتصال بالشبكة.");
+    //   return;
+    // }
+
+    // التحقق من الاتصال بالسيرفر
+    bool isServerConnected = await networkService.checkServerConnection();
+    if (!isServerConnected) {
+      _showSnackBar("لا يوجد اتصال بالسيرفر. يرجى التحقق من الاتصال.");
       return;
     }
 
@@ -270,6 +291,7 @@ class LoginScreenState extends State<LoginScreen> {
     final password = _passwordController.text;
 
     if (_isTermsAccepted && identifier.isNotEmpty && password.isNotEmpty) {
+      // هنا يبدأ الطلب فقط بعد التحقق من الاتصال بالإنترنت
       context.read<AuthCubit>().login(identifier, password);
     } else {
       _showSnackBar(

@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'auth_state.dart';
 import '../services/auth_service.dart';
@@ -25,8 +26,11 @@ class AuthCubit extends Cubit<AuthState> {
 
   // Getters لاسترجاع البيانات
   String? get token => _token;
+
   String? get userName => _userName;
+
   String? get userEmail => _userEmail;
+
   String? get userRole => _userRole;
 
   // دالة لتغيير نوع المستخدم
@@ -87,12 +91,13 @@ class AuthCubit extends Cubit<AuthState> {
           _userEmail = response.data['data']['user']['email'];
           _userRole = response.data['data']['user']['role'];
 
-
           // التأكد من أن التوكن والبيانات ليست null قبل حفظها
-          if (_token != null && _userName != null && _userEmail != null && _userRole != null) {
+          if (_token != null &&
+              _userName != null &&
+              _userEmail != null &&
+              _userRole != null) {
             await storageService.saveUserData(
-                _token!, _userName!, _userEmail!, _userRole!
-            );
+                _token!, _userName!, _userEmail!, _userRole!);
             emit(AuthSuccessSignup()); // تأكيد نجاح التسجيل
           } else {
             emit(AuthFailureSignup('بيانات التسجيل غير مكتملة.'));
@@ -124,7 +129,6 @@ class AuthCubit extends Cubit<AuthState> {
         _userEmail = response.data['data']['user']['email'];
         _userRole = response.data['data']['user']['role'];
 
-
         // حفظ البيانات في التخزين المؤقت
         await storageService.saveUserData(
             _token!, _userName!, _userEmail!, _userRole!);
@@ -133,8 +137,16 @@ class AuthCubit extends Cubit<AuthState> {
       } else {
         emit(AuthFailureLogin(ErrorHandler.getErrorMessage(response)));
       }
+    } on DioException catch (e) {
+      if (e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.receiveTimeout) {
+        emit(AuthFailureLogin(
+            "انتهت مهلة الاتصال. يرجى التحقق من اتصالك بالخادم."));
+      } else {
+        emit(AuthFailureLogin(ErrorHandler.getErrorMessage(e)));
+      }
     } catch (e) {
-      emit(AuthFailureLogin(ErrorHandler.getErrorMessage(e)));
+      emit(AuthFailureLogin("حدث خطأ غير متوقع: ${e.toString()}"));
     }
   }
 

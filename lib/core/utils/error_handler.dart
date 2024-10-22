@@ -8,8 +8,10 @@ class ErrorHandler {
             error.response?.statusCode, error.response?.data);
       } else if (error is Response) {
         return _handleApiError(error.statusCode, error.data);
+      } else if (error is DioException && (error.type == DioExceptionType.connectionTimeout || error.type == DioExceptionType.receiveTimeout)) {
+        return 'انتهت مهلة الاتصال بالخادم. تأكد من الاتصال بالشبكة.';
       } else {
-        return 'فشل الاتصال بالخادم. تأكد من وجود اتصال بالإنترنت.';
+        return 'فشل الاتصال بالخادم. تأكد من وجود اتصال بالإنترنت أو السيرفر.';
       }
     } else {
       return 'حدث خطأ غير متوقع: ${error.toString()}';
@@ -60,4 +62,3 @@ class ErrorHandler {
     }
   }
 }
-
