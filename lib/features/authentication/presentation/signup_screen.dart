@@ -631,19 +631,27 @@ class SignUpScreenState extends State<SignUpScreen> {
   }
 
   Future<void> _submitRegistration() async {
-    NetworkService networkService = NetworkService();
-
-    // التحقق من الاتصال بالإنترنت
-    bool isConnected = await networkService.checkInternetConnection();
-    if (!isConnected) {
-      _showSnackBar("لا يوجد اتصال بالإنترنت");
-      return;
-    }
-
-    // عرض مؤشر التحميل
+    // عرض مؤشر التحميل مباشرة عند بدء العملية
     _showLoadingDialog(context);
 
     try {
+      NetworkService networkService = NetworkService();
+
+      // التحقق من الاتصال بالإنترنت
+      // bool isConnected = await networkService.checkInternetConnection();
+      // if (!isConnected) {
+      //   _showSnackBar("لا يوجد اتصال بالإنترنت");
+      //   return;
+      // }
+
+      // التحقق من الاتصال بالسيرفر
+      bool isServerConnected = await networkService.checkServerConnection();
+      if (!isServerConnected) {
+        Navigator.pop(context); // إخفاء مؤشر التحميل
+        _showSnackBar("لا يوجد اتصال بالسيرفر. يرجى التحقق من الاتصال.");
+        return;
+      }
+
       // بناء الكائن SignUpModel المستخدم للتسجيل
       SignUpModel signUpModel = SignUpModel(
         email: emailController.text.isNotEmpty ? emailController.text : null,
@@ -681,9 +689,12 @@ class SignUpScreenState extends State<SignUpScreen> {
       );
 
       // إرسال بيانات التسجيل عبر AuthCubit
-      context.read<AuthCubit>().register(signUpModel);
+      await context.read<AuthCubit>().register(signUpModel);
+
+      // إخفاء مؤشر التحميل بعد انتهاء العملية
+      Navigator.pop(context);
     } catch (e) {
-      Navigator.pop(context); // إغلاق Dialog التحميل عند حدوث خطأ
+      Navigator.pop(context); // إخفاء مؤشر التحميل عند حدوث خطأ
       _showSnackBar('حدث خطأ أثناء التسجيل: ${e.toString()}');
     }
   }

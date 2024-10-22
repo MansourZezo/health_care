@@ -77,12 +77,12 @@ class LoginScreenState extends State<LoginScreen> {
                 child: BlocListener<AuthCubit, AuthState>(
                   listener: (context, state) async {
                     if (state is AuthLoading) {
-                      // عرض مؤشر التحميل
+                      // عرض مؤشر التحميل عند بدء عملية التسجيل/الدخول
                       setState(() {
                         _isLoading = true;
                       });
                     } else {
-                      // إخفاء مؤشر التحميل
+                      // إخفاء مؤشر التحميل عند انتهاء العملية
                       setState(() {
                         _isLoading = false;
                       });
@@ -272,17 +272,29 @@ class LoginScreenState extends State<LoginScreen> {
   void _login() async {
     NetworkService networkService = NetworkService();
 
+    // عرض مؤشر التحميل عند بدء الاتصال
+    setState(() {
+      _isLoading = true;
+    });
+
     // التحقق من الاتصال بالإنترنت
-    // bool isConnected = await networkService.checkInternetConnection();
-    // if (!isConnected) {
-    //   _showSnackBar("لا يوجد اتصال بالإنترنت. يرجى التحقق من الاتصال بالشبكة.");
-    //   return;
-    // }
+// bool isConnected = await networkService.checkInternetConnection();
+// if (!isConnected) {
+//   _showSnackBar("لا يوجد اتصال بالإنترنت. يرجى التحقق من الاتصال بالشبكة.");
+    // إخفاء مؤشر التحميل في حالة فشل الاتصال
+    //setState(() {
+    // _isLoading = false;
+//   return;
+// }
 
     // التحقق من الاتصال بالسيرفر
     bool isServerConnected = await networkService.checkServerConnection();
     if (!isServerConnected) {
       _showSnackBar("لا يوجد اتصال بالسيرفر. يرجى التحقق من الاتصال.");
+      // إخفاء مؤشر التحميل في حالة فشل الاتصال
+      setState(() {
+        _isLoading = false;
+      });
       return;
     }
 
@@ -291,11 +303,15 @@ class LoginScreenState extends State<LoginScreen> {
     final password = _passwordController.text;
 
     if (_isTermsAccepted && identifier.isNotEmpty && password.isNotEmpty) {
-      // هنا يبدأ الطلب فقط بعد التحقق من الاتصال بالإنترنت
+      // هنا يبدأ الطلب فقط بعد التحقق من صحة المدخلات
       context.read<AuthCubit>().login(identifier, password);
     } else {
       _showSnackBar(
           'يرجى إدخال البريد الإلكتروني/رقم الهاتف وكلمة المرور والموافقة على الشروط.');
+      // إخفاء مؤشر التحميل في حالة وجود خطأ في المدخلات
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
