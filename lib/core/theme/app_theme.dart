@@ -55,11 +55,11 @@ class AppTheme {
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ButtonStyle(
-        backgroundColor: MaterialStateProperty.all(submitButtonColor), // Green for submission button
-        padding: MaterialStateProperty.all(
+        backgroundColor: WidgetStateProperty.all(submitButtonColor), // Green for submission button
+        padding: WidgetStateProperty.all(
           const EdgeInsets.symmetric(vertical: 12),
         ),
-        textStyle: MaterialStateProperty.all(
+        textStyle: WidgetStateProperty.all(
           const TextStyle(
             fontFamily: 'Tajawal',
             fontSize: 16,
@@ -67,7 +67,7 @@ class AppTheme {
             color: Colors.white,
           ),
         ),
-        foregroundColor: MaterialStateProperty.all(Colors.white),
+        foregroundColor: WidgetStateProperty.all(Colors.white),
       ),
     ),
     colorScheme: const ColorScheme.light(
@@ -102,11 +102,11 @@ class AppTheme {
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ButtonStyle(
-        backgroundColor: MaterialStateProperty.all(submitButtonColor), // Green for submission button
-        padding: MaterialStateProperty.all(
+        backgroundColor: WidgetStateProperty.all(submitButtonColor), // Green for submission button
+        padding: WidgetStateProperty.all(
           const EdgeInsets.symmetric(vertical: 12),
         ),
-        textStyle: MaterialStateProperty.all(
+        textStyle: WidgetStateProperty.all(
           const TextStyle(
             fontFamily: 'Tajawal',
             fontSize: 16,
@@ -114,7 +114,7 @@ class AppTheme {
             color: Colors.white,
           ),
         ),
-        foregroundColor: MaterialStateProperty.all(Colors.white),
+        foregroundColor: WidgetStateProperty.all(Colors.white),
       ),
     ),
     // Custom colors for dark mode

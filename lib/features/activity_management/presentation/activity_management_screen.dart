@@ -89,7 +89,7 @@ class ActivityManagementScreenState extends State<ActivityManagementScreen>
     showModalBottomSheet(
       context: context,
       builder: (context) {
-        return Container(
+        return SizedBox(
           height: 400,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

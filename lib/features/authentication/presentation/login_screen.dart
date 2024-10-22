@@ -28,10 +28,21 @@ class LoginScreenState extends State<LoginScreen> {
   void initState() {
     super.initState();
     requestPermissions();
+    _loadRememberMeStatus();
   }
 
   Future<void> requestPermissions() async {
     await PermissionsUtil.requestPermissions();
+  }
+
+  Future<void> _loadRememberMeStatus() async {
+    // تحميل حالة "تذكرني" من SharedPreferences
+    bool? isRemembered = await _storageService.getRememberMe();
+
+    setState(() {
+      // ضبط الحالة الافتراضية إلى false إذا كانت null
+      _isRememberMeChecked = isRemembered ?? false;
+    });
   }
 
   @override
@@ -46,7 +57,6 @@ class LoginScreenState extends State<LoginScreen> {
         resizeToAvoidBottomInset: true,
         body: Stack(
           children: [
-            // التموجات في الجزء العلوي
             Positioned(
               top: isKeyboardVisible ? -50 : 0,
               left: 0,
@@ -58,7 +68,6 @@ class LoginScreenState extends State<LoginScreen> {
                 ),
               ),
             ),
-            // الشعار
             Positioned(
               top: isKeyboardVisible ? 30 : 100,
               left: 0,
@@ -77,12 +86,10 @@ class LoginScreenState extends State<LoginScreen> {
                 child: BlocListener<AuthCubit, AuthState>(
                   listener: (context, state) async {
                     if (state is AuthLoading) {
-                      // عرض مؤشر التحميل عند بدء عملية التسجيل/الدخول
                       setState(() {
                         _isLoading = true;
                       });
                     } else {
-                      // إخفاء مؤشر التحميل عند انتهاء العملية
                       setState(() {
                         _isLoading = false;
                       });
@@ -95,12 +102,16 @@ class LoginScreenState extends State<LoginScreen> {
                           authCubit.userName != null &&
                           authCubit.userEmail != null &&
                           authCubit.userRole != null) {
+                        // تخزين بيانات المستخدم
                         await _storageService.saveUserData(
                           authCubit.token!,
                           authCubit.userName!,
                           authCubit.userEmail!,
                           authCubit.userRole!,
+                          rememberMe:
+                              _isRememberMeChecked, // تمرير حالة "تذكرني"
                         );
+
                         Navigator.pushReplacementNamed(context, '/home');
                       } else {
                         _showSnackBar(
@@ -159,20 +170,26 @@ class LoginScreenState extends State<LoginScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Checkbox(
-                value: _isRememberMeChecked,
-                onChanged: (value) {
-                  setState(() {
-                    _isRememberMeChecked = value ?? false;
-                  });
-                },
-                activeColor: AppTheme.defaultUserColor,
-                checkColor: Theme.of(context).colorScheme.onPrimary,
-              ),
-              Text(
-                'تذكرني',
-                style:
-                    TextStyle(color: Theme.of(context).colorScheme.onSurface),
+              Row(
+                children: [
+                  Checkbox(
+                    value: _isRememberMeChecked,
+                    onChanged: (value) {
+                      setState(() {
+                        _isRememberMeChecked = value ?? false;
+                      });
+                    },
+                    activeColor: AppTheme.defaultUserColor,
+                    checkColor: Theme.of(context).colorScheme.onPrimary,
+                  ),
+                  const SizedBox(width: 8), // تقليل المسافة
+                  Text(
+                    'تذكرني',
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                ],
               ),
               TextButton(
                 onPressed: () {
@@ -272,43 +289,28 @@ class LoginScreenState extends State<LoginScreen> {
   void _login() async {
     NetworkService networkService = NetworkService();
 
-    // عرض مؤشر التحميل عند بدء الاتصال
     setState(() {
       _isLoading = true;
     });
-
-    // التحقق من الاتصال بالإنترنت
-// bool isConnected = await networkService.checkInternetConnection();
-// if (!isConnected) {
-//   _showSnackBar("لا يوجد اتصال بالإنترنت. يرجى التحقق من الاتصال بالشبكة.");
-    // إخفاء مؤشر التحميل في حالة فشل الاتصال
-    //setState(() {
-    // _isLoading = false;
-//   return;
-// }
 
     // التحقق من الاتصال بالسيرفر
     bool isServerConnected = await networkService.checkServerConnection();
     if (!isServerConnected) {
       _showSnackBar("لا يوجد اتصال بالسيرفر. يرجى التحقق من الاتصال.");
-      // إخفاء مؤشر التحميل في حالة فشل الاتصال
       setState(() {
         _isLoading = false;
       });
       return;
     }
 
-    // تحقق من صحة المدخلات
     final identifier = _emailController.text;
     final password = _passwordController.text;
 
     if (_isTermsAccepted && identifier.isNotEmpty && password.isNotEmpty) {
-      // هنا يبدأ الطلب فقط بعد التحقق من صحة المدخلات
       context.read<AuthCubit>().login(identifier, password);
     } else {
       _showSnackBar(
           'يرجى إدخال البريد الإلكتروني/رقم الهاتف وكلمة المرور والموافقة على الشروط.');
-      // إخفاء مؤشر التحميل في حالة وجود خطأ في المدخلات
       setState(() {
         _isLoading = false;
       });
