@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 
 class AppTheme {
   // Define the colors for each user role
-  static const Color beneficiaryColor = Color(0xFF6A5ACD); // Light Blue
-  static const Color caregiverColor = Color(0xFF32CD32); // Lime Green
-  static const Color volunteerColor = Color(0xFFEAB04D); // Orange
-  static const Color medicalSupervisorColor = Color(0xFF4169E1); // Royal Blue
-  static const Color administratorColor = Color(0xFF8B4513); // Dark Brown
-  static const Color defaultUserColor = Colors.blueAccent; // Slate Blue
+  static const Color beneficiaryColor = Color(0xFF7A6FCB);
+  static const Color caregiverColor = Color(0xFF54B96F);
+  static const Color volunteerColor = Color(0xFFD9A351);
+  static const Color medicalSupervisorColor = Color(0xFF6A92D4);
+  static const Color administratorColor = Color(0xFFA05A2B);
+  static const Color defaultUserColor = Colors.blueAccent;
 
   // Button color for submission
   static const Color submitButtonColor = Colors.green;
