@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/services/permissions_util.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/services/storage_service.dart';
+import '../../../core/services/network_service.dart';
 import '../cubit/auth_cubit.dart';
 import '../cubit/auth_state.dart';
 
@@ -45,7 +46,8 @@ class LoginScreenState extends State<LoginScreen> {
           children: [
             // التموجات في الجزء العلوي
             Positioned(
-              top: isKeyboardVisible ? -50 : 0, // تعديل الموضع بناءً على لوحة المفاتيح
+              top: isKeyboardVisible ? -50 : 0,
+              // تعديل الموضع بناءً على لوحة المفاتيح
               left: 0,
               right: 0,
               child: SizedBox(
@@ -57,7 +59,8 @@ class LoginScreenState extends State<LoginScreen> {
             ),
             // الشعار
             Positioned(
-              top: isKeyboardVisible ? 30 : 100, // تعديل الموضع بناءً على لوحة المفاتيح
+              top: isKeyboardVisible ? 30 : 100,
+              // تعديل الموضع بناءً على لوحة المفاتيح
               left: 0,
               right: 0,
               child: Center(
@@ -142,12 +145,13 @@ class LoginScreenState extends State<LoginScreen> {
                                   },
                                   activeColor: AppTheme.defaultUserColor,
                                   checkColor:
-                                  Theme.of(context).colorScheme.onPrimary,
+                                      Theme.of(context).colorScheme.onPrimary,
                                 ),
                                 Text(
                                   'تذكرني',
                                   style: TextStyle(
-                                    color: Theme.of(context).colorScheme.onSurface,
+                                    color:
+                                        Theme.of(context).colorScheme.onSurface,
                                   ),
                                 ),
                               ],
@@ -176,7 +180,7 @@ class LoginScreenState extends State<LoginScreen> {
                               },
                               activeColor: AppTheme.defaultUserColor,
                               checkColor:
-                              Theme.of(context).colorScheme.onPrimary,
+                                  Theme.of(context).colorScheme.onPrimary,
                             ),
                             Text(
                               'أوافق على الشروط والأحكام',
@@ -190,21 +194,7 @@ class LoginScreenState extends State<LoginScreen> {
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(
-                            onPressed: () {
-                              final identifier = _emailController.text;
-                              final password = _passwordController.text;
-
-                              if (_isTermsAccepted &&
-                                  identifier.isNotEmpty &&
-                                  password.isNotEmpty) {
-                                context
-                                    .read<AuthCubit>()
-                                    .login(identifier, password);
-                              } else {
-                                _showSnackBar(
-                                    'يرجى إدخال البريد الإلكتروني/رقم الهاتف وكلمة المرور والموافقة على الشروط.');
-                              }
-                            },
+                            onPressed: _login,
                             child: const Text('تسجيل الدخول'),
                           ),
                         ),
@@ -263,6 +253,28 @@ class LoginScreenState extends State<LoginScreen> {
         ),
       ),
     );
+  }
+
+  void _login() async {
+    NetworkService networkService = NetworkService();
+
+    // التحقق من الاتصال بالإنترنت
+    bool isConnected = await networkService.checkInternetConnection();
+    if (!isConnected) {
+      _showSnackBar("لا يوجد اتصال بالإنترنت");
+      return;
+    }
+
+    // تحقق من صحة المدخلات
+    final identifier = _emailController.text;
+    final password = _passwordController.text;
+
+    if (_isTermsAccepted && identifier.isNotEmpty && password.isNotEmpty) {
+      context.read<AuthCubit>().login(identifier, password);
+    } else {
+      _showSnackBar(
+          'يرجى إدخال البريد الإلكتروني/رقم الهاتف وكلمة المرور والموافقة على الشروط.');
+    }
   }
 
   void _showSnackBar(String message) {

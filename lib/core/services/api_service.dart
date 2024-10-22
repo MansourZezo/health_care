@@ -2,7 +2,7 @@ import 'package:dio/dio.dart';
 
 class ApiService {
   Dio dio = Dio();
-  final String baseUrl = "http://192.168.98.146:3000/api";
+  final String baseUrl = "http://192.168.56.202:3000/api";
 
   ApiService() {
     dio.options.baseUrl = baseUrl;
