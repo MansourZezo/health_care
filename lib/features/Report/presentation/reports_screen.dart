@@ -6,10 +6,10 @@ class ReportsScreen extends StatefulWidget {
   const ReportsScreen({super.key});
 
   @override
-  _ReportsScreenState createState() => _ReportsScreenState();
+  ReportsScreenState createState() => ReportsScreenState();
 }
 
-class _ReportsScreenState extends State<ReportsScreen>
+class ReportsScreenState extends State<ReportsScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   Color _userColor = Colors.blueAccent; // اللون الافتراضي بناءً على نوع المستخدم
