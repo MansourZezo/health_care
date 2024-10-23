@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../../core/theme/app_theme.dart';
 
 class ActivityManagementScreen extends StatefulWidget {
   const ActivityManagementScreen({super.key});
 
   @override
-  ActivityManagementScreenState createState() => ActivityManagementScreenState();
+  ActivityManagementScreenState createState() =>
+      ActivityManagementScreenState();
 }
 
 class ActivityManagementScreenState extends State<ActivityManagementScreen>
@@ -14,12 +17,23 @@ class ActivityManagementScreenState extends State<ActivityManagementScreen>
   String selectedUser = ''; // المستخدم المختار
   List<String> beneficiaries = ['مستفيد 1', 'مستفيد 2', 'مستفيد 3'];
   List<String> volunteers = ['متطوع 1', 'متطوع 2', 'متطوع 3'];
+  Color _userColor = Colors.blueAccent; // اللون الافتراضي
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     selectedUser = beneficiaries[0]; // المستخدم الافتراضي
+    _loadUserColor(); // تحميل لون المستخدم بناءً على الدور
+  }
+
+  Future<void> _loadUserColor() async {
+    final prefs = await SharedPreferences.getInstance();
+    final userRole = prefs.getString('role') ?? '';
+    setState(() {
+      _userColor = AppTheme.getUserTypeColor(
+          userRole); // تحميل اللون بناءً على دور المستخدم
+    });
   }
 
   @override
@@ -31,40 +45,89 @@ class ActivityManagementScreenState extends State<ActivityManagementScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('إدارة الأنشطة'),
-        backgroundColor: Colors.blueAccent,
-        bottom: TabBar(
-          controller: _tabController,
-          indicatorColor: Colors.white,
-          tabs: const [
-            Tab(text: 'مستفيدين'),
-            Tab(text: 'متطوعين'),
-          ],
-          onTap: (index) {
-            setState(() {
-              selectedRole = index == 0 ? 'Beneficiary' : 'Volunteer';
-              selectedUser = index == 0
-                  ? beneficiaries.isNotEmpty ? beneficiaries[0] : ''
-                  : volunteers.isNotEmpty ? volunteers[0] : '';
-            });
-          },
-        ),
-      ),
-      body: Column(
-        children: [
-          const SizedBox(height: 10),
-          ElevatedButton(
-            onPressed: _showUserSelectionModal, // عرض قائمة المستخدمين
-            child: Text('اختر ${selectedRole == 'Beneficiary' ? 'مستفيد' : 'متطوع'}'),
+      body: CustomScrollView(
+        slivers: <Widget>[
+          SliverAppBar(
+            automaticallyImplyLeading: false,
+            expandedHeight: 250.0,
+            floating: false,
+            pinned: true,
+            flexibleSpace: FlexibleSpaceBar(
+              centerTitle: true,
+              titlePadding: const EdgeInsets.only(bottom: 78),
+              title: const Text('إدارة الأنشطة'),
+              background: Stack(
+                children: [
+                  Positioned.fill(
+                    child: CustomPaint(
+                      painter: _WavePainter(color: _userColor),
+                    ),
+                  ),
+                  Positioned(
+                    top: 65,
+                    left: 0,
+                    right: 0,
+                    child: Center(
+                      child: Container(
+                        width: 75,
+                        height: 75,
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black26,
+                              blurRadius: 10,
+                              spreadRadius: 1,
+                            ),
+                          ],
+                        ),
+                        child: Icon(Icons.local_activity,
+                            size: 50, color: _userColor),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            bottom: PreferredSize(
+              preferredSize: const Size.fromHeight(60),
+              child: TabBar(
+                controller: _tabController,
+                labelColor: _userColor,
+                unselectedLabelColor: Colors.grey,
+                indicatorColor: _userColor,
+                indicatorWeight: 3.0,
+                tabs: const [
+                  Tab(icon: Icon(Icons.person), text: 'مستفيدين'),
+                  Tab(icon: Icon(Icons.volunteer_activism), text: 'متطوعين'),
+                ],
+                onTap: (index) {
+                  setState(() {
+                    selectedRole = index == 0 ? 'Beneficiary' : 'Volunteer';
+                    selectedUser = index == 0
+                        ? beneficiaries.isNotEmpty
+                        ? beneficiaries[0]
+                        : ''
+                        : volunteers.isNotEmpty
+                        ? volunteers[0]
+                        : '';
+                  });
+                },
+              ),
+            ),
           ),
-          const SizedBox(height: 10),
-          Expanded(
+          SliverFillRemaining(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(16.0),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  const SizedBox(height: 10),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    child: _buildSelectionButton(selectedRole),
+                  ), // زر الاختيار الجديد المصغر داخل الـ Column
+                  const SizedBox(height: 10),
                   if (selectedUser.isNotEmpty)
                     Text(
                       'تفاصيل $selectedUser',
@@ -98,7 +161,8 @@ class ActivityManagementScreenState extends State<ActivityManagementScreen>
                 padding: const EdgeInsets.all(16.0),
                 child: Text(
                   'اختر ${selectedRole == 'Beneficiary' ? 'مستفيد' : 'متطوع'}',
-                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                      fontSize: 20, fontWeight: FontWeight.bold),
                 ),
               ),
               Expanded(
@@ -116,7 +180,8 @@ class ActivityManagementScreenState extends State<ActivityManagementScreen>
                         setState(() {
                           selectedUser = user;
                         });
-                        Navigator.pop(context); // إغلاق الـ Bottom Sheet بعد الاختيار
+                        Navigator.pop(
+                            context); // إغلاق الـ Bottom Sheet بعد الاختيار
                       },
                     );
                   },
@@ -126,6 +191,45 @@ class ActivityManagementScreenState extends State<ActivityManagementScreen>
           ),
         );
       },
+    );
+  }
+
+  Widget _buildSelectionButton(String role) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      // ضبط المسافة العلوية والسفلية
+      child: Card(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        elevation: 3,
+        child: InkWell(
+          onTap: _showUserSelectionModal,
+          child: Padding(
+            padding: const EdgeInsets.all(10.0),
+            // تصغير الـ padding حول المحتوى
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  role == 'Beneficiary'
+                      ? Icons.person
+                      : Icons.volunteer_activism,
+                  size: 30, // تصغير حجم الأيقونة
+                  color: _userColor,
+                ),
+                const SizedBox(height: 5), // تصغير المسافة بين الأيقونة والنص
+                Text(
+                  'اختر ${role == 'Beneficiary' ? 'مستفيد' : 'متطوع'}',
+                  style: TextStyle(
+                    fontSize: 14, // تصغير حجم النص
+                    fontWeight: FontWeight.bold,
+                    color: _userColor,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 
@@ -157,6 +261,7 @@ class ActivityManagementScreenState extends State<ActivityManagementScreen>
   Widget _buildActivityDetails() {
     return Card(
       elevation: 3,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -183,7 +288,9 @@ class ActivityManagementScreenState extends State<ActivityManagementScreen>
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: List.generate(
-            rating, (index) => const Icon(Icons.star, color: Colors.amber)),
+          rating,
+              (index) => const Icon(Icons.star, color: Colors.amber),
+        ),
       ),
     );
   }
@@ -192,6 +299,7 @@ class ActivityManagementScreenState extends State<ActivityManagementScreen>
   Widget _buildEditActivityForm() {
     return Card(
       elevation: 3,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -208,19 +316,26 @@ class ActivityManagementScreenState extends State<ActivityManagementScreen>
             const SizedBox(height: 10),
             _buildTextField('التقييم', '5'),
             const SizedBox(height: 20),
-            ElevatedButton.icon(
-              onPressed: () {
-                // تنفيذ الحفظ
-              },
-              icon: const Icon(Icons.save),
-              label: const Text('حفظ التعديلات'),
+            Center(
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  // تنفيذ الحفظ
+                },
+                icon: const Icon(Icons.save),
+                label: const Text('حفظ التعديلات'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.submitButtonColor,
+                  // لون الزر الأخضر من الـ Theme
+                  padding:
+                  const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+                ),
+              ),
             ),
           ],
         ),
       ),
     );
   }
-
 
   // حقل إدخال نصي لتعديل الأنشطة
   Widget _buildTextField(String label, String initialValue) {
@@ -237,6 +352,7 @@ class ActivityManagementScreenState extends State<ActivityManagementScreen>
   Widget _buildVolunteerReportSection() {
     return Card(
       elevation: 3,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -265,5 +381,36 @@ class ActivityManagementScreenState extends State<ActivityManagementScreen>
         Text(value),
       ],
     );
+  }
+}
+
+// رسم التموجات
+class _WavePainter extends CustomPainter {
+  final Color color;
+
+  _WavePainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill;
+
+    final path = Path()
+      ..moveTo(0, size.height * 0.35)
+      ..quadraticBezierTo(size.width * 0.25, size.height * 0.45,
+          size.width * 0.5, size.height * 0.35)
+      ..quadraticBezierTo(
+          size.width * 0.75, size.height * 0.25, size.width, size.height * 0.35)
+      ..lineTo(size.width, 0)
+      ..lineTo(0, 0)
+      ..close();
+
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(CustomPainter oldDelegate) {
+    return false;
   }
 }
