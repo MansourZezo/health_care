@@ -7,13 +7,9 @@ class SignUpModel {
   String? address;
   String? dateOfBirth;
   String? role;
-
-  // المستندات الخاصة بالمتطوع
   String? identityProof;
   String? drivingLicense;
   String? medicalCertificate;
-
-  // المعلومات الصحية للمستفيد
   HealthInfo? healthInfo;
 
   SignUpModel({
@@ -31,25 +27,23 @@ class SignUpModel {
     this.healthInfo,
   });
 
-  // لتحويل النموذج إلى JSON عند الإرسال إلى السيرفر
   Map<String, dynamic> toJson() {
     final data = <String, dynamic>{
-      'email': email,
-      'phoneNumber': phoneNumber,
+      'email': email ?? '',
+      'phoneNumber': phoneNumber ?? '',
       'password': password,
       'name': name,
-      'role': role,
-      'profile': {  // هنا يتم إضافة الحقول ضمن كائن profile
-        'address': address,
-        'dateOfBirth': dateOfBirth,
-        'profilePicture': profileImage
+      'role': role ?? '',
+      'profile': {
+        'address': address ?? '',
+        'dateOfBirth': dateOfBirth ?? '',
+        'profilePicture': profileImage ?? ''
       },
-      'identityProof': identityProof,
-      'drivingLicense': drivingLicense,
-      'medicalCertificate': medicalCertificate,
+      'identityProof': identityProof ?? '',
+      'drivingLicense': drivingLicense ?? '',
+      'medicalCertificate': medicalCertificate ?? '',
     };
 
-    // إضافة المعلومات الصحية إذا كان المستخدم مستفيدًا
     if (role == 'Beneficiary' && healthInfo != null) {
       data['healthInfo'] = healthInfo!.toJson();
     }
@@ -57,7 +51,6 @@ class SignUpModel {
     return data;
   }
 }
-
 
 class HealthInfo {
   String? generalHealthCondition;
@@ -70,12 +63,19 @@ class HealthInfo {
     this.bloodPressure,
   });
 
-  // لتحويل المعلومات الصحية إلى JSON
   Map<String, dynamic> toJson() {
-    return {
-      'generalHealthCondition': generalHealthCondition,
-      'weight': weight,
-      'bloodPressure': bloodPressure,
-    };
+    final healthData = <String, dynamic>{};
+
+    if (generalHealthCondition != null) {
+      healthData['generalHealthCondition'] = generalHealthCondition;
+    }
+    if (weight != null) {
+      healthData['weight'] = weight;
+    }
+    if (bloodPressure != null) {
+      healthData['bloodPressure'] = bloodPressure;
+    }
+
+    return healthData;
   }
 }

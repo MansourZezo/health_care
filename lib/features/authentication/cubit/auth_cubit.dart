@@ -15,7 +15,6 @@ class AuthCubit extends Cubit<AuthState> {
   final ApiService apiService;
   final StorageService storageService = StorageService();
 
-  // المتغيرات لتخزين التوكن وبيانات المستخدم
   String? _token;
   String? _userName;
   String? _userEmail;
@@ -24,7 +23,6 @@ class AuthCubit extends Cubit<AuthState> {
   AuthCubit(this.authService, this.fileUploadService, this.apiService)
       : super(AuthInitial());
 
-  // Getters لاسترجاع البيانات
   String? get token => _token;
 
   String? get userName => _userName;
@@ -33,12 +31,11 @@ class AuthCubit extends Cubit<AuthState> {
 
   String? get userRole => _userRole;
 
-  // دالة لتغيير نوع المستخدم
   void changeUserType(String userType) {
     emit(UserTypeSelected(userType));
   }
 
-  // دالة لرفع الملفات
+  // دالة خاصة لرفع الملفات
   Future<String?> _uploadFile(String? filePath, String endpoint,
       {required bool isImage}) async {
     if (filePath != null) {
@@ -55,53 +52,77 @@ class AuthCubit extends Cubit<AuthState> {
     return null;
   }
 
-  // دالة التسجيل
+  // دالة عامة لرفع الملفات
+  Future<void> uploadFileToServer(
+      String filePath, String endpoint, String profileId,
+      {required bool isImage}) async {
+    try {
+      String? fileUrl =
+          await _uploadFile(filePath, '$endpoint/$profileId', isImage: isImage);
+      if (fileUrl != null) {
+        emit(AuthSuccessUpload(fileUrl));
+      } else {
+        emit(AuthFailureUpload('فشل في رفع الملف.'));
+      }
+    } catch (e) {
+      emit(AuthFailureUpload(ErrorHandler.getErrorMessage(e)));
+    }
+  }
+
   Future<void> register(SignUpModel signUpModel) async {
     emit(AuthLoading());
     try {
-      // رفع الملفات وصورة الملف الشخصي
-      String? profileImageUrl = await _uploadFile(
-          signUpModel.profileImage, '/uploads/profile',
-          isImage: true);
-      String? identityProofUrl = await _uploadFile(
-          signUpModel.identityProof, '/uploads/documents',
-          isImage: false);
-      String? drivingLicenseUrl = await _uploadFile(
-          signUpModel.drivingLicense, '/uploads/documents',
-          isImage: false);
-      String? medicalCertificateUrl = await _uploadFile(
-          signUpModel.medicalCertificate, '/uploads/documents',
-          isImage: false);
+      // 1. رفع الملفات قبل التسجيل
+      String? profileImageUrl;
+      if (signUpModel.profileImage != null) {
+        profileImageUrl = await _uploadFile(
+            signUpModel.profileImage, '/uploads/profile', isImage: true);
+      }
 
-      // تحديث روابط الملفات في النموذج
+      String? identityProofUrl;
+      if (signUpModel.identityProof != null) {
+        identityProofUrl = await _uploadFile(
+            signUpModel.identityProof, '/uploads/documents', isImage: false);
+      }
+
+      String? drivingLicenseUrl;
+      if (signUpModel.drivingLicense != null) {
+        drivingLicenseUrl = await _uploadFile(
+            signUpModel.drivingLicense, '/uploads/documents', isImage: false);
+      }
+
+      String? medicalCertificateUrl;
+      if (signUpModel.medicalCertificate != null) {
+        medicalCertificateUrl = await _uploadFile(
+            signUpModel.medicalCertificate, '/uploads/documents', isImage: false);
+      }
+
+      // 2. تعديل قيم SignUpModel باستخدام الروابط التي تم رفعها
       signUpModel.profileImage = profileImageUrl;
       signUpModel.identityProof = identityProofUrl;
       signUpModel.drivingLicense = drivingLicenseUrl;
       signUpModel.medicalCertificate = medicalCertificateUrl;
 
-      // استدعاء دالة التسجيل في AuthService
+      // 3. الآن بعد رفع الملفات، إرسال البيانات للتسجيل
+      print('SignUpModel being sent to backend: ${signUpModel.toJson()}');
       final response = await authService.register(signUpModel);
+      print('Response from server: ${response.data}');
 
-      // التحقق من نجاح العملية
       if (response.statusCode == 200 || response.statusCode == 201) {
-        // التحقق من أن response.data ليست null
+        final profileId = response.data['data']['user']['profile'];
+        print('Profile ID received: $profileId');
+
         if (response.data != null && response.data['token'] != null) {
           _token = response.data['token'];
           _userName = response.data['data']['user']['name'];
           _userEmail = response.data['data']['user']['email'];
           _userRole = response.data['data']['user']['role'];
 
-          // التأكد من أن التوكن والبيانات ليست null قبل حفظها
-          if (_token != null &&
-              _userName != null &&
-              _userEmail != null &&
-              _userRole != null) {
-            await storageService.saveUserData(
-                _token!, _userName!, _userEmail!, _userRole!);
-            emit(AuthSuccessSignup()); // تأكيد نجاح التسجيل
-          } else {
-            emit(AuthFailureSignup('بيانات التسجيل غير مكتملة.'));
-          }
+          // حفظ بيانات المستخدم
+          await storageService.saveUserData(
+              _token!, _userName!, _userEmail!, _userRole!);
+
+          emit(AuthSuccessSignup(profileId: profileId));
         } else {
           emit(AuthFailureSignup('فشل في الحصول على بيانات المستخدم.'));
         }
@@ -110,30 +131,26 @@ class AuthCubit extends Cubit<AuthState> {
             'فشل التسجيل. ${ErrorHandler.getErrorMessage(response)}'));
       }
     } catch (e) {
+      print('Error during registration: ${e.toString()}');
       emit(AuthFailureSignup(
           'حدث خطأ أثناء التسجيل: ${ErrorHandler.getErrorMessage(e)}'));
     }
   }
 
-  // دالة تسجيل الدخول
+
   Future<void> login(String identifier, String password) async {
     emit(AuthLoading());
     try {
       final response = await authService.login(identifier, password);
-
-      // تحقق من نجاح تسجيل الدخول
       if (response.statusCode == 200 || response.statusCode == 201) {
-        // تخزين الـ token وبيانات المستخدم
         _token = response.data['token'];
         _userName = response.data['data']['user']['name'];
         _userEmail = response.data['data']['user']['email'];
         _userRole = response.data['data']['user']['role'];
 
-        // حفظ البيانات في التخزين المؤقت
         await storageService.saveUserData(
             _token!, _userName!, _userEmail!, _userRole!);
-
-        emit(AuthSuccessLogin()); // تأكيد نجاح تسجيل الدخول
+        emit(AuthSuccessLogin());
       } else {
         emit(AuthFailureLogin(ErrorHandler.getErrorMessage(response)));
       }
@@ -150,7 +167,6 @@ class AuthCubit extends Cubit<AuthState> {
     }
   }
 
-  // دالة لطلب الأذونات
   Future<void> requestPermissions() async {
     try {
       await PermissionsUtil.requestPermissions();

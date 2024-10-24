@@ -25,13 +25,32 @@ class ApiService {
   }
 
   // طلب POST عام
-  Future<Response> postRequest(
-      String endpoint, Map<String, dynamic> data) async {
+  Future<Response> postRequest(String endpoint, Map<String, dynamic> data) async {
     try {
       Response response = await dio.post(endpoint, data: data);
       return response;
     } catch (e) {
       throw Exception('POST request failed: $e');
+    }
+  }
+
+  // طلب PUT عام
+  Future<Response> putRequest(String endpoint, Map<String, dynamic> data) async {
+    try {
+      Response response = await dio.put(endpoint, data: data);
+      return response;
+    } catch (e) {
+      throw Exception('PUT request failed: $e');
+    }
+  }
+
+  // طلب DELETE عام
+  Future<Response> deleteRequest(String endpoint) async {
+    try {
+      Response response = await dio.delete(endpoint);
+      return response;
+    } catch (e) {
+      throw Exception('DELETE request failed: $e');
     }
   }
 }

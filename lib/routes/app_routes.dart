@@ -60,9 +60,17 @@ class AppRoutes {
         return MaterialPageRoute(builder: (_) => const VerifyDataScreen());
       case confirmation:
         return MaterialPageRoute(
-            builder: (_) => const ConfirmationScreen(
-                  userType: 'Beneficiary',
-                ));
+          builder: (_) {
+            final args = routeSettings.arguments as Map<String, dynamic>;
+
+            return ConfirmationScreen(
+              userType: args['userType'] as String,
+              isFilesComplete: args['isFilesComplete'] as bool,
+              missingFiles: args['missingFiles'] as List<String>,
+              profileId: args['profileId'] as String, // تأكد من تمرير profileId
+            );
+          },
+        );
       case profile:
         return MaterialPageRoute(builder: (_) => const ProfileScreen());
       case settings:

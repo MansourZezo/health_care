@@ -66,8 +66,36 @@ class SignUpScreenState extends State<SignUpScreen> {
           child: BlocListener<AuthCubit, AuthState>(
             listener: (context, state) {
               if (state is AuthSuccessSignup) {
+                List<String> missingFiles = [];
+                bool isFilesComplete = true;
+
+                if (selectedUserType == 'Volunteer') {
+                  // التحقق من الملفات المرفوعة
+                  if (identityProofImage == null) {
+                    missingFiles.add('إثبات الهوية');
+                  }
+                  if (drivingLicenseImage == null) {
+                    missingFiles.add('رخصة القيادة');
+                  }
+                  if (medicalCertificateImage == null) {
+                    missingFiles.add('شهادة طبية');
+                  }
+
+                  isFilesComplete = missingFiles.isEmpty;
+                }
+
+                // تمرير البيانات إلى صفحة التأكيد
                 Navigator.pop(context);
-                Navigator.pushNamed(context, '/confirmation');
+                Navigator.pushNamed(
+                  context,
+                  '/confirmation',
+                  arguments: {
+                    'userType': selectedUserType,
+                    'isFilesComplete': isFilesComplete,
+                    'missingFiles': missingFiles,
+                    'profileId': state.profileId,
+                  },
+                );
               } else if (state is AuthFailureSignup) {
                 Navigator.pop(context);
                 _showSnackBar("خطأ في التسجيل: ${state.errorMessage}");

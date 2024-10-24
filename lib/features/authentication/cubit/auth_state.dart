@@ -11,7 +11,14 @@ class AuthLoading extends AuthState {}
 
 class AuthSuccessLogin extends AuthState {}
 
-class AuthSuccessSignup extends AuthState {}
+class AuthSuccessSignup extends AuthState {
+  final String profileId;
+
+  AuthSuccessSignup({required this.profileId});
+
+  @override
+  List<Object> get props => [profileId];
+}
 
 // حالة لتمثيل فشل تسجيل الدخول
 class AuthFailureLogin extends AuthState {
@@ -41,4 +48,24 @@ class UserTypeSelected extends AuthState {
 
   @override
   List<Object> get props => [userType];
+}
+
+// حالة تمثيل نجاح رفع الملف
+class AuthSuccessUpload extends AuthState {
+  final String fileUrl;
+
+  AuthSuccessUpload(this.fileUrl);
+
+  @override
+  List<Object> get props => [fileUrl];
+}
+
+// حالة تمثيل فشل رفع الملف
+class AuthFailureUpload extends AuthState {
+  final String errorMessage;
+
+  AuthFailureUpload(this.errorMessage);
+
+  @override
+  List<Object> get props => [errorMessage];
 }
