@@ -78,7 +78,7 @@ class SignUpScreenState extends State<SignUpScreen> {
                     missingFiles.add('رخصة القيادة');
                   }
                   if (medicalCertificateImage == null) {
-                    missingFiles.add('شهادة طبية');
+                    missingFiles.add('شهادة الإسعاف أو التمريض');
                   }
 
                   isFilesComplete = missingFiles.isEmpty;

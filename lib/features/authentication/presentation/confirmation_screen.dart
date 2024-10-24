@@ -34,7 +34,16 @@ class ConfirmationScreenState extends State<ConfirmationScreen> {
   @override
   void initState() {
     super.initState();
-    remainingFiles = List.from(widget.missingFiles);
+
+    // التأكد من الملفات المرفوعة مسبقاً إذا كانت البيانات تم استلامها من الصفحة السابقة
+    identityProofImage =
+        widget.missingFiles.contains('إثبات الهوية') ? null : 'تم رفع الملف';
+    drivingLicenseImage =
+        widget.missingFiles.contains('رخصة القيادة') ? null : 'تم رفع الملف';
+    medicalCertificateImage =
+        widget.missingFiles.contains('شهادة الإسعاف أو التمريض')
+            ? null
+            : 'تم رفع الملف';
   }
 
   @override
@@ -111,30 +120,37 @@ class ConfirmationScreenState extends State<ConfirmationScreen> {
   }
 
   Widget _buildVolunteerDocuments() {
-    return Column(
+    return Wrap(
+      alignment: WrapAlignment.center, // يجعل الأيقونات تتمركز بشكل أفقي
+      spacing: 20.0, // المسافة الأفقية بين الأيقونات
+      runSpacing: 20.0, // المسافة العمودية بين الأيقونات
       children: [
-        if (identityProofImage == null &&
-            drivingLicenseImage == null &&
-            medicalCertificateImage == null)
-          const Text(
-            'يسمح بملفات pdf, docx, txt بحد أقصى 5MB',
-            style: TextStyle(fontSize: 12, color: Colors.grey),
-          ),
-        const SizedBox(height: 8),
-        _buildFileUploadField(
-          label: 'إثبات الهوية',
-          fileType: 'identityProof',
-        ),
-        const SizedBox(height: 20),
-        _buildFileUploadField(
-          label: 'رخصة القيادة',
-          fileType: 'drivingLicense',
-        ),
-        const SizedBox(height: 20),
-        _buildFileUploadField(
-          label: 'شهادة الإسعاف أو التمريض',
-          fileType: 'medicalCertificate',
-        ),
+        // التحقق من حالة إثبات الهوية
+        if (identityProofImage == null) // التحقق من أن الملف غير مرفوع مسبقاً
+          _buildFileUploadField(
+            label: 'إثبات الهوية',
+            fileType: 'identityProof',
+          )
+        else
+          _buildFileUploadedIcon('إثبات الهوية'),
+
+        // التحقق من حالة رخصة القيادة
+        if (drivingLicenseImage == null)
+          _buildFileUploadField(
+            label: 'رخصة القيادة',
+            fileType: 'drivingLicense',
+          )
+        else
+          _buildFileUploadedIcon('رخصة القيادة'),
+
+        // التحقق من حالة الشهادة الطبية
+        if (medicalCertificateImage == null)
+          _buildFileUploadField(
+            label: 'شهادة الإسعاف أو التمريض',
+            fileType: 'medicalCertificate',
+          )
+        else
+          _buildFileUploadedIcon('شهادة الإسعاف أو التمريض'),
       ],
     );
   }
@@ -143,78 +159,93 @@ class ConfirmationScreenState extends State<ConfirmationScreen> {
     required String label,
     required String fileType,
   }) {
+    return SizedBox(
+      width: 150,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          GestureDetector(
+            onTap: () async {
+              String? filePath =
+                  await filePickerService.pickImageOrFile(context, 'pdf');
+              if (filePath != null) {
+                // رفع الملف باستخدام profileId
+                await context.read<AuthCubit>().uploadFileToServer(
+                    filePath, '/documents', widget.profileId,
+                    isImage: false);
+
+                setState(() {
+                  if (fileType == 'identityProof') {
+                    identityProofImage = filePath;
+                  } else if (fileType == 'drivingLicense') {
+                    drivingLicenseImage = filePath;
+                  } else if (fileType == 'medicalCertificate') {
+                    medicalCertificateImage = filePath;
+                  }
+                  uploadedFiles.add(fileType);
+                  remainingFiles.remove(fileType);
+                });
+              }
+            },
+            child: Container(
+              padding: const EdgeInsets.all(6),
+              width: 130,
+              height: 55,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(10),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.3),
+                    spreadRadius: 3,
+                    blurRadius: 7,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.file_upload,
+                    size: 20,
+                    color: AppTheme.defaultUserColor,
+                  ),
+                  const SizedBox(width: 5),
+                  const Text(
+                    'إرفاق ملف',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.defaultUserColor,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // عرض رسالة أو أيقونة تؤكد رفع الملف
+  Widget _buildFileUploadedIcon(String label) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
         const SizedBox(height: 8),
-        GestureDetector(
-          onTap: () async {
-            String? filePath =
-                await filePickerService.pickImageOrFile(context, 'pdf');
-            if (filePath != null) {
-              await context.read<AuthCubit>().uploadFileToServer(
-                  filePath, '/uploads/documents', widget.profileId,
-                  isImage: false);
-              setState(() {
-                if (fileType == 'identityProof') {
-                  identityProofImage = filePath;
-                } else if (fileType == 'drivingLicense') {
-                  drivingLicenseImage = filePath;
-                } else if (fileType == 'medicalCertificate') {
-                  medicalCertificateImage = filePath;
-                }
-                uploadedFiles.add(fileType);
-                remainingFiles.remove(fileType);
-              });
-            }
-          },
-          child: Container(
-            padding: const EdgeInsets.all(6),
-            width: double.infinity,
-            height: 55,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(10),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey.withOpacity(0.3),
-                  spreadRadius: 3,
-                  blurRadius: 7,
-                  offset: const Offset(0, 3),
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.file_upload,
-                  size: 20,
-                  color: AppTheme.defaultUserColor,
-                ),
-                const SizedBox(width: 10),
-                const Text(
-                  'إرفاق ملف',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.defaultUserColor,
-                  ),
-                ),
-              ],
-            ),
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: const [
+            Icon(Icons.check_circle, color: Colors.green, size: 18),
+            SizedBox(width: 5),
+            Text("تم رفع الملف", style: TextStyle(color: Colors.green)),
+          ],
         ),
-        if (uploadedFiles.contains(fileType)) ...[
-          const SizedBox(height: 8),
-          Row(
-            children: const [
-              Icon(Icons.check_circle, color: Colors.green, size: 18),
-              SizedBox(width: 5),
-              Text("تم رفع الملف", style: TextStyle(color: Colors.green)),
-            ],
-          ),
-        ],
       ],
     );
   }

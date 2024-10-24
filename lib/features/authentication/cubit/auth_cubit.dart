@@ -59,6 +59,7 @@ class AuthCubit extends Cubit<AuthState> {
     try {
       String? fileUrl =
           await _uploadFile(filePath, '$endpoint/$profileId', isImage: isImage);
+
       if (fileUrl != null) {
         emit(AuthSuccessUpload(fileUrl));
       } else {
@@ -76,25 +77,29 @@ class AuthCubit extends Cubit<AuthState> {
       String? profileImageUrl;
       if (signUpModel.profileImage != null) {
         profileImageUrl = await _uploadFile(
-            signUpModel.profileImage, '/uploads/profile', isImage: true);
+            signUpModel.profileImage, '/uploads/profile',
+            isImage: true);
       }
 
       String? identityProofUrl;
       if (signUpModel.identityProof != null) {
         identityProofUrl = await _uploadFile(
-            signUpModel.identityProof, '/uploads/documents', isImage: false);
+            signUpModel.identityProof, '/uploads/documents',
+            isImage: false);
       }
 
       String? drivingLicenseUrl;
       if (signUpModel.drivingLicense != null) {
         drivingLicenseUrl = await _uploadFile(
-            signUpModel.drivingLicense, '/uploads/documents', isImage: false);
+            signUpModel.drivingLicense, '/uploads/documents',
+            isImage: false);
       }
 
       String? medicalCertificateUrl;
       if (signUpModel.medicalCertificate != null) {
         medicalCertificateUrl = await _uploadFile(
-            signUpModel.medicalCertificate, '/uploads/documents', isImage: false);
+            signUpModel.medicalCertificate, '/uploads/documents',
+            isImage: false);
       }
 
       // 2. تعديل قيم SignUpModel باستخدام الروابط التي تم رفعها
@@ -103,14 +108,10 @@ class AuthCubit extends Cubit<AuthState> {
       signUpModel.drivingLicense = drivingLicenseUrl;
       signUpModel.medicalCertificate = medicalCertificateUrl;
 
-      // 3. الآن بعد رفع الملفات، إرسال البيانات للتسجيل
-      print('SignUpModel being sent to backend: ${signUpModel.toJson()}');
       final response = await authService.register(signUpModel);
-      print('Response from server: ${response.data}');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final profileId = response.data['data']['user']['profile'];
-        print('Profile ID received: $profileId');
 
         if (response.data != null && response.data['token'] != null) {
           _token = response.data['token'];
@@ -131,12 +132,10 @@ class AuthCubit extends Cubit<AuthState> {
             'فشل التسجيل. ${ErrorHandler.getErrorMessage(response)}'));
       }
     } catch (e) {
-      print('Error during registration: ${e.toString()}');
       emit(AuthFailureSignup(
           'حدث خطأ أثناء التسجيل: ${ErrorHandler.getErrorMessage(e)}'));
     }
   }
-
 
   Future<void> login(String identifier, String password) async {
     emit(AuthLoading());

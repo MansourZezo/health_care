@@ -67,7 +67,7 @@ class AppRoutes {
               userType: args['userType'] as String,
               isFilesComplete: args['isFilesComplete'] as bool,
               missingFiles: args['missingFiles'] as List<String>,
-              profileId: args['profileId'] as String, // تأكد من تمرير profileId
+              profileId: args['profileId'] as String,
             );
           },
         );
